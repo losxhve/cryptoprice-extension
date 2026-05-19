@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CryptoPrice</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 380px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; }
+    .header { padding: 16px 16px 12px; background: #1e293b; border-bottom: 1px solid #334155; }
+    .header h1 { font-size: 18px; background: linear-gradient(135deg, #f59e0b, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .price-list { padding: 8px; }
+    .coin-row { display: flex; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+    .coin-row:hover { background: #1e293b; }
+    .coin-row .symbol { font-size: 16px; font-weight: 700; width: 60px; color: #f1f5f9; }
+    .coin-row .name { font-size: 13px; color: #64748b; flex: 1; }
+    .coin-row .price { font-size: 15px; font-weight: 600; color: #22c55e; }
+    .coin-row .change { font-size: 12px; width: 55px; text-align: right; }
+    .coin-row .change.up { color: #22c55e; }
+    .coin-row .change.down { color: #ef4444; }
+    .loading { text-align: center; padding: 40px; color: #64748b; font-size: 14px; }
+    .footer { padding: 10px 16px; border-top: 1px solid #334155; font-size: 11px; color: #475569; text-align: center; }
+    .alert-btn { display: block; margin: 8px 12px; padding: 10px; text-align: center; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .alert-btn:hover { background: #2563eb; }
+    .refresh-time { font-size: 10px; color: #475569; text-align: center; margin-top: 4px; }
+    .search-box { margin: 8px 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 13px; width: calc(100% - 24px); outline: none; }
+    .search-box:focus { border-color: #3b82f6; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🚀 CryptoPrice</h1>
+    <div class="sub">实时加密货币行情 · 点击价格复制</div>
+  </div>
+  <input type="text" class="search-box" id="search" placeholder="搜索币种..." oninput="filterCoins()">
+  <div class="price-list" id="priceList">
+    <div class="loading">加载中...</div>
+  </div>
+  <a class="alert-btn" href="https://cryptoalerts-production.up.railway.app" target="_blank">🔔 设置价格告警</a>
+  <div class="refresh-time" id="refreshTime"></div>
+  <div class="footer">数据来源: CoinGecko · CryptoPrice v1.0</div>
+
+  <script>
+    const COINS = {
+      "bitcoin": "BTC", "ethereum": "ETH", "solana": "SOL", "ripple": "XRP",
+      "dogecoin": "DOGE", "cardano": "ADA", "polkadot": "DOT", "avalanche-2": "AVAX",
+      "chainlink": "LINK", "polygon": "MATIC", "tron": "TRX", "litecoin": "LTC",
+      "arbitrum": "ARB", "optimism": "OP", "sui": "SUI"
+    };
+
+    let prices = {};
+
+    async function fetchPrices() {
+      const ids = Object.keys(COINS).join(',');
+      try {
+        const resp = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
+        const data = await resp.json();
+        prices = data;
+        renderPrices();
+        document.getElementById('refreshTime').textContent = '最后更新: ' + new Date().toLocaleTimeString('zh-CN');
+      } catch(e) {
+        document.getElementById('priceList').innerHTML = '<div class="loading">⚠️ 加载失败，请检查网络</div>';
+      }
+    }
+
+    function renderPrices() {
+      const search = document.getElementById('search').value.toLowerCase();
+      const list = document.getElementById('priceList');
+      let html = '';
+      for (const [id, info] of Object.entries(COINS)) {
+        if (search && !info.toLowerCase().includes(search) && !id.toLowerCase().includes(search)) continue;
+        const data = prices[id];
+        if (!data) { html += `<div class="coin-row"><span class="symbol">${info}</span><span class="name">${id}</span><span class="price">--</span></div>`; continue; }
+        const price = data.usd;
+        const change = data.usd_24h_change;
+        const changeStr = change ? `${change >= 0 ? '+' : ''}${change.toFixed(2)}%` : '--';
+        const changeClass = change >= 0 ? 'up' : 'down';
+        html += `<div class="coin-row" onclick="copyPrice('${info}', ${price})">
+          <span class="symbol">${info}</span>
+          <span class="name">${id}</span>
+          <span class="price">$${price.toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:6})}</span>
+          <span class="change ${changeClass}">${changeStr}</span>
+        </div>`;
+      }
+      list.innerHTML = html || '<div class="loading">未找到匹配币种</div>';
+    }
+
+    function copyPrice(sym, price) {
+      const text = `${sym}: $${price}`;
+      navigator.clipboard.writeText(text).then(() => {
+        const toast = document.createElement('div');
+        toast.textContent = `✅ 已复制: ${text}`;
+        toast.style.cssText = 'position:fixed;bottom:50px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:8px 16px;border-radius:8px;font-size:13px;z-index:999;';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1500);
+      });
+    }
+
+    function filterCoins() { renderPrices(); }
+
+    fetchPrices();
+    setInterval(fetchPrices, 60000);
+  </script>
+</body>
+</html>

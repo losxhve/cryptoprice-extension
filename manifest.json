@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "CryptoPrice - 实时加密货币行情",
+  "version": "1.0.0",
+  "description": "在浏览器工具栏实时查看 BTC/ETH/SOL 等15个主流币种价格",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://api.coingecko.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
