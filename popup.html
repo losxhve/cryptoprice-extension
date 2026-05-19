@@ -39,7 +39,12 @@
   </div>
   <a class="alert-btn" href="https://cryptoalerts-production.up.railway.app" target="_blank">🔔 设置价格告警</a>
   <div class="refresh-time" id="refreshTime"></div>
-  <div class="footer">数据来源: CoinGecko · CryptoPrice v1.0</div>
+  <div class="footer">
+    <div>数据来源: CoinGecko · CryptoPrice v1.0</div>
+    <div style="margin-top:4px;font-size:10px;color:#475569;">
+      💖 支持开发者: USDT(TRC-20) <span style="color:#a5b4fc;cursor:pointer;" onclick="copyAddr()">TBzeBcdaEGvS2FLnW7wjHuN19RqUaVpFHH</span>
+    </div>
+  </div>
 
   <script>
     const COINS = {
@@ -98,6 +103,16 @@
     }
 
     function filterCoins() { renderPrices(); }
+
+    function copyAddr() {
+      navigator.clipboard.writeText('TBzeBcdaEGvS2FLnW7wjHuN19RqUaVpFHH').then(() => {
+        const t = document.createElement('div');
+        t.textContent = '✅ 收款地址已复制';
+        t.style.cssText = 'position:fixed;bottom:50px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:8px 16px;border-radius:8px;font-size:13px;z-index:999;';
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 1500);
+      });
+    }
 
     fetchPrices();
     setInterval(fetchPrices, 60000);
